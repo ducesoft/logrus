@@ -76,18 +76,18 @@ func (mw *MutexWrap) Disable() {
 // `Out` and `Hooks` directly on the default logger instance. You can also just
 // instantiate your own:
 //
-//    var log = &logrus.Logger{
-//      Out: os.Stderr,
-//      Formatter: new(logrus.TextFormatter),
-//      Hooks: make(logrus.LevelHooks),
-//      Level: logrus.DebugLevel,
-//    }
+//	var log = &logrus.Logger{
+//	  Out: os.Stderr,
+//	  Formatter: new(logrus.TextFormatter),
+//	  Hooks: make(logrus.LevelHooks),
+//	  Level: logrus.DebugLevel,
+//	}
 //
 // It's recommended to make this a global instance called `log`.
 func New() *Logger {
 	return &Logger{
-		Out:          os.Stderr,
-		Formatter:    new(TextFormatter),
+		Out:          GlobalWriterHook(os.Stderr),
+		Formatter:    GlobalFormatterHook(new(TextFormatter)),
 		Hooks:        make(LevelHooks),
 		Level:        InfoLevel,
 		ExitFunc:     os.Exit,
@@ -347,9 +347,9 @@ func (logger *Logger) Exit(code int) {
 	logger.ExitFunc(code)
 }
 
-//When file is opened with appending mode, it's safe to
-//write concurrently to a file (within 4k message on Linux).
-//In these cases user can choose to disable the lock.
+// When file is opened with appending mode, it's safe to
+// write concurrently to a file (within 4k message on Linux).
+// In these cases user can choose to disable the lock.
 func (logger *Logger) SetNoLock() {
 	logger.mu.Disable()
 }
@@ -384,14 +384,14 @@ func (logger *Logger) IsLevelEnabled(level Level) bool {
 func (logger *Logger) SetFormatter(formatter Formatter) {
 	logger.mu.Lock()
 	defer logger.mu.Unlock()
-	logger.Formatter = formatter
+	logger.Formatter = GlobalFormatterHook(formatter)
 }
 
 // SetOutput sets the logger output.
 func (logger *Logger) SetOutput(output io.Writer) {
 	logger.mu.Lock()
 	defer logger.mu.Unlock()
-	logger.Out = output
+	logger.Out = GlobalWriterHook(output)
 }
 
 func (logger *Logger) SetReportCaller(reportCaller bool) {
